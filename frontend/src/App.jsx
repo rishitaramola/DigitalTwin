@@ -5,6 +5,7 @@ import Simulation from './pages/Simulation'
 import HabitDNA from './pages/HabitDNA'
 import ShadowSelf from './pages/ShadowSelf'
 import SuccessArchaeology from './pages/SuccessArchaeology'
+import Chat from './pages/Chat'
 
 function App() {
   return (
@@ -18,7 +19,8 @@ function App() {
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/habit-dna" element={<HabitDNA />} />
             <Route path="/shadow-self" element={<ShadowSelf />} />
-            <Route path="/success" element={<SuccessArchaeology />} />
+            <Route path="/success-archaeology" element={<SuccessArchaeology />} />
+            <Route path="/chat" element={<Chat />} />
           </Routes>
         </main>
       </div>

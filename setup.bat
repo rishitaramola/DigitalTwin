@@ -1,5 +1,5 @@
 @echo off
-TITLE Digital Twin of You — Setup | Bit Rebels
+TITLE "Digital Twin of You Setup - Bit Rebels"
 echo ============================================================
 echo   Digital Twin of You — Setup Script
 echo   Team: Bit Rebels ^| Hack-o-Holic 4.0

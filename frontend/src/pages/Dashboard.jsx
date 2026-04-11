@@ -70,13 +70,13 @@ export default function Dashboard() {
     setIntentGateData({
       id: 'demo_1',
       type: 'intent_gate',
-      primary_action: "What's your goal for the next 20 minutes?",
-      risk_score: 0.78,
-      coach_message: "Sequence detected: Email → News → Social Media. This is your #1 distraction chain. You're at the second link right now. Closing the chain here means the next 90 minutes are yours.",
+      primary_action: "You usually waste 2 hours now. Want to switch to study mode?",
+      risk_score: 0.88,
+      coach_message: "You've broken your streak 3 times at this hour this week. Just 10 mins of study here equals a massive 40% jump in your chance of completing your daily goal! 💡",
       options: [
-        { id: 'focus', label: 'Stay focused 🎯', value: 'focus', primary: true },
-        { id: 'rest', label: 'I need rest 😴', value: 'intentional_rest', primary: false },
-        { id: 'allow', label: 'Allow this time 🔓', value: 'intentional_break', primary: false }
+        { id: 'focus', label: 'Start Pomodoro (10 mins) 🎯', value: 'focus', primary: true },
+        { id: 'music', label: 'Play Focus Music 🎧', value: 'focus', primary: true },
+        { id: 'rest', label: 'I really need rest 😴', value: 'intentional_rest', primary: false },
       ]
     })
     setShowIntentGate(true)
@@ -264,7 +264,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid-2">
+      <div className="grid-2" style={{ marginBottom: '24px' }}>
         {/* Behaviour Chain */}
         <div className="card">
           <div className="flex items-center justify-between mb-16">
@@ -281,7 +281,7 @@ export default function Dashboard() {
           {/* Log event buttons */}
           <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '10px', fontWeight: 600 }}>
-              Simulate App Opens
+               Simulate App Opens
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {['email', 'news', 'social_media', 'deep_work', 'video'].map(app => (
@@ -323,7 +323,7 @@ export default function Dashboard() {
               fontSize: '0.9rem', lineHeight: 1.7,
               color: 'var(--text-primary)', fontStyle: 'italic'
             }}>
-              "{prediction.coach_message || 'Analyzing your patterns...'}"
+               "{prediction.coach_message || 'Analyzing your patterns...'}"
             </p>
           </div>
 
@@ -361,6 +361,83 @@ export default function Dashboard() {
             <button id="trigger-intervention-btn" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={triggerDemo}>
               Trigger Intervention
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* NEW FEATURES ROW: Explainable AI & Mood Input */}
+      <div className="grid-2">
+        {/* Explainable AI */}
+        <div className="card" style={{ background: 'rgba(6, 182, 212, 0.04)', borderColor: 'rgba(6, 182, 212, 0.2)' }}>
+           <div className="flex items-center justify-between mb-16">
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--cyan)' }}>
+              🧠 Explainable AI (Why?)
+            </h2>
+            <span className="badge badge-cyan" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--cyan)' }}>Prediction Logic</span>
+          </div>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.6 }}>
+            You are likely to <span style={{color: predConfig.color, fontWeight: 'bold'}}>{predConfig.label}</span> because:
+          </p>
+          <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {prediction.top_features ? prediction.top_features.map((feat, i) => (
+              <li key={i} style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <CheckCircle size={14} color="var(--cyan)" />
+                {feat}
+              </li>
+            )) : (
+              <>
+                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CheckCircle size={14} color="var(--cyan)" />
+                  You slept late last night (Recovery deficit)
+                </li>
+                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CheckCircle size={14} color="var(--cyan)" />
+                  It is 3:00 PM (Your historical energy dip)
+                </li>
+                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CheckCircle size={14} color="var(--cyan)" />
+                  You just opened an app from your distraction chain
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+
+        {/* Mood Override (Active Detection) */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-16">
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
+              ❤️ User Mood Input
+            </h2>
+            <span className="badge badge-emerald" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--emerald)' }}>Active Sensing</span>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+            Override the passive fingerprint. How are you feeling right now?
+          </p>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <input 
+              type="text" 
+              placeholder="e.g. 'I feel tired', 'Super focused!'" 
+              id="mood-input-box"
+              style={{
+                flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
+                color: 'white', outline: 'none', fontSize: '0.9rem'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.target.value = '';
+                  triggerDemo(); // Demo an intervention based on mood
+                }
+              }}
+            />
+            <button className="btn btn-primary btn-sm" onClick={() => {
+              document.getElementById('mood-input-box').value = '';
+              triggerDemo();
+            }}>Detect</button>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: '6px', borderLeft: '3px solid var(--emerald)' }}>
+            Detected: <strong>Tiredness</strong>. Prediction automatically adjusted to higher distraction risk.
           </div>
         </div>
       </div>

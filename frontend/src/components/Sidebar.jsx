@@ -1,14 +1,15 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, GitBranch, Dna, Ghost, Trophy, Activity, Shield
+  LayoutDashboard, GitBranch, Dna, Ghost, Trophy, Activity, Shield, MessageSquare
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Live Twin', description: 'Real-time state' },
   { to: '/simulation', icon: GitBranch, label: 'Run Simulation', description: 'What if?' },
-  { to: '/shadow-self', icon: Ghost, label: 'Shadow Self', description: 'Two futures' },
-  { to: '/habit-dna', icon: Dna, label: 'Habit DNA', description: 'Weekly report' },
-  { to: '/success', icon: Trophy, label: 'Success Mining', description: 'Your best days' },
+  { to: '/shadow-self', icon: Ghost, label: 'Shadow Self', description: 'Focused vs Distracted' },
+  { to: '/habit-dna', icon: Dna, label: 'Habit DNA', description: 'Weekly narrative report' },
+  { to: '/success-archaeology', icon: Trophy, label: 'Success Archaeology', description: 'Mine your best days' },
+  { to: '/chat', icon: MessageSquare, label: 'AI Clone Chat', description: 'Talk to your twin' },
 ]
 
 export default function Sidebar() {
