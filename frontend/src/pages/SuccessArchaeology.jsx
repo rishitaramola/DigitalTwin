@@ -46,6 +46,13 @@ export default function SuccessArchaeology() {
         </p>
       </div>
 
+      {/* Page explanation */}
+      <div className="card" style={{ marginBottom:'24px', borderColor:'rgba(16,185,129,0.25)', background:'rgba(16,185,129,0.04)' }}>
+        <p style={{ fontSize:'0.9rem', color:'var(--text-secondary)', lineHeight:1.8, margin:0 }}>
+          <strong style={{ color:'var(--text-primary)' }}>🏆 What is this page?</strong> Your best days didn't happen by accident. There were specific things you did — the time you woke up, where you sat, whether you checked your phone first. This page <strong style={{ color:'var(--emerald)' }}>digs into your past data like an archaeologist</strong> and finds the exact recipe for your most productive days so you can repeat them on purpose.
+        </p>
+      </div>
+
       {loading ? (
         <div className="card skeleton" style={{ height: '300px' }} />
       ) : (
@@ -71,9 +78,12 @@ export default function SuccessArchaeology() {
           <div className="grid-2" style={{ marginBottom: '24px' }}>
             {/* Success conditions */}
             <div className="card">
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '16px' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
                 🌟 Super Day Blueprint
               </h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+                These are the exact conditions that were present on your top 10% most productive days. If you copy these conditions, your Twin predicts a Super Day.
+              </p>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
                 These are the exact conditions present on your top 10% of days. Replicate these, and your twin predicts peak performance.
               </p>
@@ -103,9 +113,12 @@ export default function SuccessArchaeology() {
 
             {/* Pattern table */}
             <div className="card">
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '16px' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
                 🔍 Deep Work Hotspots
               </h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+                These are specific times and places where you consistently produce your best work. The more "times" listed, the more reliable the pattern.
+              </p>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                 Times & locations where you consistently produce deep work
               </p>
@@ -146,11 +159,11 @@ export default function SuccessArchaeology() {
 
           {/* Success ritual builder */}
           <div className="card card-glow-violet">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '16px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
               🔧 Build Your Success Ritual
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.6 }}>
-              Based on reverse-engineering your Super Days, your twin recommends this morning ritual to maximize the probability of a peak performance day:
+              Based on reverse-engineering your Super Days, your Twin created this morning routine. Follow these steps in order and your chance of having a peak day goes up massively.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               {[

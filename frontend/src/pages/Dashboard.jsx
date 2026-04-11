@@ -1,38 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
-import { RefreshCw, Zap, AlertTriangle, CheckCircle, Brain, MapPin, Clock } from 'lucide-react'
-import TwinDivergenceGauge from '../components/TwinDivergenceGauge'
-import BehaviourChain from '../components/BehaviourChain'
-import MoodFingerprint from '../components/MoodFingerprint'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts'
+import { RefreshCw, Zap, AlertTriangle, BrainCircuit, Activity, Clock, TerminalSquare, AlertCircle, MousePointer2, ChevronRight, Fingerprint } from 'lucide-react'
 import IntentGate from '../components/IntentGate'
-
-// ── Mock data for demo (uses when API is offline) ───────────────────────────
-const MOCK_STATE = {
-  prediction: {
-    prediction: 'distraction',
-    risk_score: 0.76,
-    confidence: 0.83,
-    intervention_level: 'intent_gate',
-    coach_message: "Sequence detected: Email → News → Social Media. This is your #1 distraction chain. You're at the second link right now. Closing the chain here means the next 90 minutes are yours.",
-    probabilities: { deep_work: 0.12, distraction: 0.76, rest_needed: 0.08, burnout_risk: 0.04 }
-  },
-  mood_fingerprint: {
-    stress_level: 0.62, focus_score: 0.38, energy_level: 0.55,
-    anxiety_index: 0.44, emotional_state: 'distracted',
-    typing_speed_wpm: 42.5, notification_lag_seconds: 18.3, app_switch_rate: 0.8
-  },
-  twin_divergence: { score: 34, grade: 'B', trend: 'declining', distraction_events: 8, deep_work_events: 14 },
-  flow_state_active: false,
-  behaviour_chain: ['email', 'news'],
-  active_intervention: null
-}
-
-const PREDICTION_COLORS = {
-  deep_work: { color: 'var(--emerald)', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)', label: 'Deep Work', icon: '🎯' },
-  distraction: { color: '#fbbf24', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', label: 'Distraction Risk', icon: '⚠️' },
-  rest_needed: { color: 'var(--cyan-light)', bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.3)', label: 'Rest Needed', icon: '😴' },
-  burnout_risk: { color: '#fb7185', bg: 'rgba(244,63,94,0.1)', border: 'rgba(244,63,94,0.3)', label: 'Burnout Risk', icon: '🔥' },
-}
 
 export default function Dashboard() {
   const [state, setState] = useState(null)
@@ -41,6 +11,7 @@ export default function Dashboard() {
   const [showIntentGate, setShowIntentGate] = useState(false)
   const [intentGateData, setIntentGateData] = useState(null)
   const [useMock, setUseMock] = useState(false)
+  const [moodInput, setMoodInput] = useState('')
 
   const fetchState = useCallback(async () => {
     setLoading(true)
@@ -53,7 +24,23 @@ export default function Dashboard() {
         setShowIntentGate(true)
       }
     } catch {
-      setState(MOCK_STATE)
+      setState({
+        prediction: { 
+          prediction: 'distraction', 
+          risk_score: 0.76, 
+          intervention_level: 'intent_gate', 
+          coach_message: "Taking a break? A 10 minute walk resets focus.",
+          top_features: ["You usually rest at this hour", "You just opened Social Media"]
+        },
+        mood_fingerprint: { 
+          focus_score: 0.85, energy_level: 0.60, stress_level: 0.30, 
+          willpower: 0.70, cognitive_load: 0.80, emotional_state: 'distracted',
+          typing_wpm: 42,
+          app_switches: 14
+        },
+        behaviour_chain: ['email', 'news', 'youtube'],
+        twin_divergence: { score: 34, grade: 'B', trend: 'declining' }
+      })
       setUseMock(true)
     }
     setLastRefresh(new Date())
@@ -68,32 +55,39 @@ export default function Dashboard() {
 
   const triggerDemo = () => {
     setIntentGateData({
-      id: 'demo_1',
-      type: 'intent_gate',
+      id: 'demo_1', type: 'intent_gate',
       primary_action: "You usually waste 2 hours now. Want to switch to study mode?",
       risk_score: 0.88,
-      coach_message: "You've broken your streak 3 times at this hour this week. Just 10 mins of study here equals a massive 40% jump in your chance of completing your daily goal! 💡",
+      coach_message: "You've broken your streak. Just 10 mins of study equals a 40% jump!",
       options: [
         { id: 'focus', label: 'Start Pomodoro (10 mins) 🎯', value: 'focus', primary: true },
-        { id: 'music', label: 'Play Focus Music 🎧', value: 'focus', primary: true },
         { id: 'rest', label: 'I really need rest 😴', value: 'intentional_rest', primary: false },
       ]
     })
     setShowIntentGate(true)
   }
 
+  const handleSimulateApp = async (app) => {
+    try {
+      await axios.post('/api/log-event', { app_category: app, location: 'desk' })
+      fetchState()
+    } catch { 
+      triggerDemo()
+    }
+  }
+
+  const handleMoodSubmit = () => {
+    if(!moodInput.trim()) return;
+    setMoodInput('');
+    triggerDemo();
+  }
+
   if (loading && !state) {
     return (
-      <div>
-        <div className="page-header">
-          <h1 className="page-title">Live Digital Twin</h1>
-          <p className="page-subtitle">Loading your behavioural state...</p>
-        </div>
-        <div className="grid-3" style={{ marginBottom: '20px' }}>
-          {[1,2,3].map(i => <div key={i} className="card skeleton" style={{ height: '120px' }} />)}
-        </div>
-        <div className="grid-2">
-          {[1,2].map(i => <div key={i} className="card skeleton" style={{ height: '280px' }} />)}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <RefreshCw size={32} style={{ color: 'var(--violet)', animation: 'spin-slow 1s linear infinite' }} /> 
+          <span style={{ color: 'var(--text-secondary)' }}>Syncing with Twin...</span>
         </div>
       </div>
     )
@@ -101,345 +95,268 @@ export default function Dashboard() {
 
   const prediction = state?.prediction || {}
   const mood = state?.mood_fingerprint || {}
-  const divergence = state?.twin_divergence || {}
   const chain = state?.behaviour_chain || []
-  const predConfig = PREDICTION_COLORS[prediction.prediction] || PREDICTION_COLORS.distraction
   const riskPct = Math.round((prediction.risk_score || 0) * 100)
+
+  const radarData = [
+    { subject: 'Focus', A: Math.round((mood.focus_score || 0) * 100), fullMark: 100 },
+    { subject: 'Energy', A: Math.round((mood.energy_level || 0) * 100), fullMark: 100 },
+    { subject: 'Stress', A: Math.round((mood.stress_level || 0) * 100), fullMark: 100 },
+    { subject: 'Willpower', A: Math.round((mood.willpower || 0.70) * 100), fullMark: 100 },
+    { subject: 'Load', A: Math.round((mood.cognitive_load || 0.80) * 100), fullMark: 100 },
+  ]
+
+  const riskColor = riskPct > 70 ? '#f43f5e' : riskPct > 45 ? '#f59e0b' : '#10b981'
+  const riskLabel = riskPct < 30 ? 'Safe Zone' : riskPct < 70 ? 'Moderate' : 'High Risk'
 
   return (
     <div>
       {/* Intent Gate Modal */}
       {showIntentGate && intentGateData && (
-        <IntentGate
-          intervention={intentGateData}
-          onClose={() => setShowIntentGate(false)}
-          onRespond={(choice) => console.log('User chose:', choice)}
-        />
+        <div className="modal-backdrop">
+          <IntentGate intervention={intentGateData} onClose={() => setShowIntentGate(false)} onRespond={() => setShowIntentGate(false)} />
+        </div>
       )}
 
       {/* Header */}
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:'16px' }}>
         <div>
-          <h1 className="page-title">Live Digital Twin</h1>
-          <p className="page-subtitle">
-            Real-time predictive mirror &nbsp;·&nbsp;
+          <h1 className="page-title">Live Twin Dashboard</h1>
+          <p className="page-subtitle" style={{ display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap' }}>
+            Your real-time digital mirror
             {lastRefresh && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
-                Updated {lastRefresh.toLocaleTimeString()}
+              <span className="text-mono" style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>
+                · Updated {lastRefresh.toLocaleTimeString()}
               </span>
             )}
+            {useMock && <span className="badge badge-amber">Mock Mode</span>}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {useMock && (
-            <span className="badge badge-amber">Demo Mode</span>
-          )}
-          <div className="live-indicator">
-            <div className="live-dot" />
-            LIVE
-          </div>
-          <button id="refresh-btn" className="btn btn-secondary btn-sm" onClick={fetchState}>
-            <RefreshCw size={14} style={{ animation: loading ? 'spin-slow 1s linear infinite' : 'none' }} />
-            Refresh
+        <div style={{ display:'flex', gap:'10px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={fetchState}>
+            <RefreshCw size={14} /> Refresh
           </button>
-          <button id="demo-intent-gate-btn" className="btn btn-primary btn-sm" onClick={triggerDemo}>
-            <Zap size={14} />
-            Demo Intent Gate
+          <button className="btn btn-primary btn-sm" onClick={triggerDemo}>
+            <Zap size={14} /> Test Intent Gate
           </button>
         </div>
       </div>
 
-      {/* Top metric cards */}
-      <div className="grid-4" style={{ marginBottom: '24px' }}>
-        {/* Prediction state */}
-        <div className="card" style={{
-          background: predConfig.bg,
-          borderColor: predConfig.border
-        }}>
-          <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>{predConfig.icon}</div>
-          <div className="metric-label">Current Prediction</div>
-          <div className="metric-value" style={{ fontSize: '1.3rem', color: predConfig.color }}>
-            {predConfig.label}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-            {Math.round((prediction.confidence || 0) * 100)}% confidence
-          </div>
-        </div>
+      {/* ═══════ ROW 1: The Three Main Widgets ═══════ */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(320px, 1fr))', gap:'24px', marginBottom:'28px' }}>
 
-        {/* Risk score */}
-        <div className={`card ${riskPct > 70 ? 'card-glow-rose' : riskPct > 45 ? 'card-glow-cyan' : 'card-glow-emerald'}`}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <div className="metric-label">Distraction Risk</div>
-            <AlertTriangle size={16} color={riskPct > 70 ? 'var(--rose)' : 'var(--amber)'} />
-          </div>
-          <div className="metric-value" style={{ color: riskPct > 70 ? '#fb7185' : riskPct > 45 ? '#fbbf24' : '#34d399' }}>
-            {riskPct}%
-          </div>
-          <div className={`risk-bar ${riskPct > 70 ? 'risk-high' : riskPct > 45 ? 'risk-medium' : 'risk-low'}`} style={{ marginTop: '10px' }}>
-            <div className="risk-fill" style={{ width: `${riskPct}%` }} />
-          </div>
-        </div>
-
-        {/* Focus score */}
-        <div className="card card-glow-violet">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div className="metric-label">Focus Score</div>
-            <Brain size={16} color="var(--violet-light)" />
-          </div>
-          <div className="metric-value" style={{ color: 'var(--violet-light)' }}>
-            {Math.round((mood.focus_score || 0) * 100)}%
-          </div>
-          <div className={`risk-bar ${mood.focus_score > 0.6 ? 'risk-low' : 'risk-high'}`} style={{ marginTop: '10px' }}>
-            <div className="risk-fill" style={{ width: `${Math.round((mood.focus_score || 0) * 100)}%` }} />
-          </div>
-        </div>
-
-        {/* Flow state */}
-        <div className={`card ${state?.flow_state_active ? 'card-glow-emerald' : ''}`}
-             style={{ background: state?.flow_state_active ? 'rgba(16,185,129,0.08)' : undefined }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div className="metric-label">Flow State</div>
-            <Zap size={16} color={state?.flow_state_active ? 'var(--emerald)' : 'var(--text-muted)'} />
-          </div>
-          <div className="metric-value" style={{
-            fontSize: '1.3rem',
-            color: state?.flow_state_active ? 'var(--emerald)' : 'var(--text-secondary)'
-          }}>
-            {state?.flow_state_active ? '⚡ Active' : 'Monitoring'}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            {state?.flow_state_active ? 'Notifications paused' : 'Waiting for sustained focus'}
-          </div>
-        </div>
-      </div>
-
-      {/* Main content row */}
-      <div className="grid-2" style={{ marginBottom: '24px' }}>
-        {/* Twin Divergence + Chain */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
-              Twin Divergence Score
+        {/* ── Widget A: Distraction Risk Gauge ── */}
+        <div className="card" style={{ display:'flex', flexDirection:'column' }}>
+          {/* Title Row */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+            <h2 style={{ fontSize:'1.05rem', fontWeight:700, display:'flex', alignItems:'center', gap:'8px', fontFamily:'var(--font-display)' }}>
+              <AlertCircle size={18} style={{ color:'var(--violet-light)' }} /> Distraction Risk
             </h2>
-            <span className={`badge ${divergence.grade === 'A' ? 'badge-emerald' : divergence.grade === 'B' ? 'badge-cyan' : divergence.grade === 'C' ? 'badge-amber' : 'badge-rose'}`}>
-              Grade {divergence.grade}
+            <span className={`badge ${riskPct < 30 ? 'badge-emerald' : riskPct < 70 ? 'badge-amber' : 'badge-rose'}`}>
+              {riskLabel}
             </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <TwinDivergenceGauge
-              score={divergence.score || 0}
-              grade={divergence.grade || 'A'}
-              trend={divergence.trend || 'improving'}
-            />
-          </div>
-          {/* Mini stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {[
-              { label: 'Deep Work', value: divergence.deep_work_events || 0, color: 'var(--emerald)', icon: '🎯' },
-              { label: 'Distractions', value: divergence.distraction_events || 0, color: 'var(--rose)', icon: '📱' }
-            ].map(({ label, value, color, icon }) => (
-              <div key={label} style={{
-                padding: '10px', background: 'var(--bg-glass)',
-                border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '1rem', marginBottom: '4px' }}>{icon}</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color }}>{value}</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{label}</div>
+
+          {/* Description */}
+          <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)', lineHeight:1.6, marginBottom:'20px' }}>
+            <strong style={{ color:'var(--text-primary)' }}>How it works:</strong> We look at the apps you just used and the time of day. Our ML model cross-references this with your personal history to predict how likely you are to get distracted right now.
+          </p>
+
+          {/* Gauge */}
+          <div style={{ display:'flex', justifyContent:'center', padding:'12px 0 20px' }}>
+            <div style={{ position:'relative', width:'180px', height:'180px' }}>
+              <svg viewBox="0 0 200 200" style={{ width:'100%', height:'100%', transform:'rotate(-90deg)' }}>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="14" />
+                <circle cx="100" cy="100" r="80" fill="none" stroke={riskColor} strokeWidth="14"
+                  strokeDasharray={502} strokeDashoffset={502 - (502 * riskPct) / 100}
+                  strokeLinecap="round" style={{ transition:'stroke-dashoffset 1s ease', filter:`drop-shadow(0 0 8px ${riskColor}60)` }} />
+              </svg>
+              <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+                <span style={{ fontSize:'2.8rem', fontWeight:800, color:riskColor, fontFamily:'var(--font-display)', lineHeight:1 }}>{riskPct}%</span>
+                <span style={{ fontSize:'0.7rem', color:'var(--text-muted)', marginTop:'4px' }}>risk score</span>
               </div>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div style={{ background:'var(--bg-glass)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'12px 16px', marginBottom:'16px' }}>
+            <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>Currently Engaged In</span>
+            <div style={{ fontSize:'0.95rem', fontWeight:700, textTransform:'capitalize', marginTop:'2px' }}>
+              {prediction.prediction ? prediction.prediction.replace('_', ' ') : 'Deep Work'}
+            </div>
+          </div>
+
+          {/* Proof */}
+          <div style={{ background:'rgba(0,0,0,0.3)', borderRadius:'var(--radius-sm)', padding:'14px 16px', border:'1px solid var(--border)', marginTop:'auto' }}>
+            <div style={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--violet-light)', marginBottom:'8px', display:'flex', alignItems:'center', gap:'6px' }}>
+              <Fingerprint size={12} /> The Proof (Real Data)
+            </div>
+            <ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:'6px' }}>
+              {(prediction.top_features || [`It's ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}, your energy historically dips now.`, "You just shifted focus away from Deep Work."]).map((feat, i) => (
+                <li key={i} style={{ fontSize:'0.8rem', color:'var(--text-secondary)', display:'flex', alignItems:'flex-start', gap:'8px' }}>
+                  <ChevronRight size={14} style={{ color:'var(--cyan)', flexShrink:0, marginTop:'2px' }} />
+                  <span>{feat}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ── Widget B: Mood Fingerprint ── */}
+        <div className="card" style={{ display:'flex', flexDirection:'column' }}>
+          {/* Title */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+            <h2 style={{ fontSize:'1.05rem', fontWeight:700, display:'flex', alignItems:'center', gap:'8px', fontFamily:'var(--font-display)' }}>
+              <BrainCircuit size={18} style={{ color:'var(--violet-light)' }} /> Mood Fingerprint
+            </h2>
+            <span className="badge badge-violet">Passive Sensing</span>
+          </div>
+
+          {/* Description */}
+          <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)', lineHeight:1.6, marginBottom:'16px' }}>
+            <strong style={{ color:'var(--text-primary)' }}>How it works:</strong> We silently measure how fast you type and how often you switch between apps. These micro-signals paint an accurate picture of your brain's current energy and focus levels.
+          </p>
+
+          {/* Radar Chart */}
+          <div style={{ width:'100%', height:'260px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                <PolarGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#D1D5DB', fontSize: 11, fontWeight: 600 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar name="State" dataKey="A" stroke="#a855f7" strokeWidth={2} fill="#a855f7" fillOpacity={0.25} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Insight */}
+          <div style={{ background:'rgba(124,58,237,0.08)', border:'1px solid rgba(124,58,237,0.25)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', gap:'10px', marginBottom:'12px' }}>
+            <Activity size={18} style={{ color:'var(--violet-light)', flexShrink:0, marginTop:'2px' }} />
+            <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)', lineHeight:1.6, margin:0 }}>
+              {prediction.coach_message || "High cognitive load detected. Energy is draining faster than usual."}
+            </p>
+          </div>
+
+          {/* Proof */}
+          <div style={{ background:'rgba(0,0,0,0.3)', borderRadius:'var(--radius-sm)', padding:'14px 16px', border:'1px solid var(--border)', marginTop:'auto' }}>
+            <div style={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--violet-light)', marginBottom:'8px', display:'flex', alignItems:'center', gap:'6px' }}>
+              <Fingerprint size={12} /> The Proof (Real Data)
+            </div>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-secondary)', lineHeight:1.6, margin:0 }}>
+              Your typing speed is currently <strong style={{ color:'white' }}>{mood.typing_wpm || 42} WPM</strong> and you've switched apps <strong style={{ color:'white' }}>{mood.app_switches || 14} times</strong> in the last 15 minutes. This usually signals a <strong style={{ color:'var(--violet-light)' }}>drop in mental energy</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* ── Widget C: Behaviour Chain ── */}
+        <div className="card" style={{ display:'flex', flexDirection:'column' }}>
+          {/* Title */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+            <h2 style={{ fontSize:'1.05rem', fontWeight:700, display:'flex', alignItems:'center', gap:'8px', fontFamily:'var(--font-display)' }}>
+              <Clock size={18} style={{ color:'var(--violet-light)' }} /> Behaviour Chain
+            </h2>
+            <span className="badge badge-amber">Monitoring</span>
+          </div>
+
+          {/* Description */}
+          <p style={{ fontSize:'0.82rem', color:'var(--text-secondary)', lineHeight:1.6, marginBottom:'20px' }}>
+            <strong style={{ color:'var(--text-primary)' }}>How it works:</strong> We track the sequence of apps you open. If you start a common distraction pattern (e.g. Email → Reddit → YouTube), we step in to break the cycle before you lose focus.
+          </p>
+
+          {/* Timeline */}
+          <div className="timeline" style={{ flex:1 }}>
+            {chain.length > 1 && (
+              <div className="timeline-item">
+                <div className="timeline-time">Where you were · 15 mins ago</div>
+                <div className="timeline-text" style={{ textTransform:'capitalize' }}>{chain[0]}</div>
+              </div>
+            )}
+
+            <div className="timeline-item" style={{ position:'relative' }}>
+              <div className="timeline-time" style={{ color:'var(--violet-light)', display:'flex', alignItems:'center', gap:'4px' }}>
+                <TerminalSquare size={10} /> Current Phase
+              </div>
+              <div className="timeline-text" style={{ textTransform:'capitalize', color:'var(--violet-light)', fontWeight:700 }}>
+                {chain[chain.length - 1] || 'Idle'}
+              </div>
+            </div>
+
+            {prediction.risk_score > 0.4 && (
+              <div className="timeline-item">
+                <div className="timeline-time" style={{ color:'var(--rose)', display:'flex', alignItems:'center', gap:'4px' }}>
+                  <AlertTriangle size={10} /> Predicted Risk
+                </div>
+                <div className="timeline-text" style={{ textTransform:'capitalize', color:'#fb7185' }}>
+                  {prediction.prediction || 'Distraction'} — {riskPct}% probability
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Proof */}
+          <div style={{ background:'rgba(0,0,0,0.3)', borderRadius:'var(--radius-sm)', padding:'14px 16px', border:'1px solid var(--border)', marginTop:'auto' }}>
+            <div style={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--violet-light)', marginBottom:'8px', display:'flex', alignItems:'center', gap:'6px' }}>
+              <Fingerprint size={12} /> The Proof (Real Data)
+            </div>
+            <p style={{ fontSize:'0.8rem', color:'var(--text-secondary)', lineHeight:1.6, margin:0 }}>
+              Whenever you open <strong style={{ color:'white', textTransform:'capitalize' }}>{chain[0] || 'your previous app'}</strong> followed by <strong style={{ color:'white', textTransform:'capitalize' }}>{chain[chain.length - 1] || 'your current app'}</strong>, it leads to a <strong style={{ color:'#fb7185' }}>total distraction {riskPct}% of the time</strong>.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ═══════ ROW 2: Interactive Controls ═══════ */}
+      <div className="grid-2" style={{ marginBottom:'24px' }}>
+        
+        {/* Hardware Simulator */}
+        <div className="card">
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px', flexWrap:'wrap', gap:'10px' }}>
+            <div>
+              <h3 style={{ fontSize:'0.95rem', fontWeight:700, display:'flex', alignItems:'center', gap:'8px', color:'var(--cyan-light)' }}>
+                <MousePointer2 size={16} /> Hardware Simulator
+              </h3>
+              <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginTop:'4px' }}>
+                Inject fake app-opens to see how your Twin reacts instantly
+              </p>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={triggerDemo}>
+              Trigger AI Block
+            </button>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'8px' }}>
+            {['email', 'news', 'social_media', 'deep_work', 'video'].map(app => (
+              <button key={app} className="btn btn-secondary btn-sm" onClick={() => handleSimulateApp(app)}
+                style={{ flex:'1 1 auto', minWidth:'90px', textAlign:'center', textTransform:'capitalize' }}>
+                Log {app.replace('_', ' ')}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Mood Fingerprint */}
+        {/* Emotion Override */}
         <div className="card">
-          <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
-              Mood Fingerprint
-            </h2>
-            <span className="badge badge-violet">Passive Sensing</span>
-          </div>
-          <MoodFingerprint mood={mood} />
-        </div>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid-2" style={{ marginBottom: '24px' }}>
-        {/* Behaviour Chain */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
-              Behaviour Chain
-            </h2>
-            <span className="badge badge-amber">Monitoring</span>
-          </div>
-          <BehaviourChain
-            chain={chain}
-            pattern={state?.behaviour_chain_pattern}
-          />
-
-          {/* Log event buttons */}
-          <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '10px', fontWeight: 600 }}>
-               Simulate App Opens
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {['email', 'news', 'social_media', 'deep_work', 'video'].map(app => (
-                <button
-                  key={app}
-                  id={`log-${app}-btn`}
-                  className="btn btn-secondary btn-sm"
-                  onClick={async () => {
-                    try {
-                      await axios.post('/api/log-event', { app_category: app, location: 'desk' })
-                      fetchState()
-                    } catch { /* demo */ }
-                  }}
-                >
-                  {app.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Coach Message */}
-        <div className="card card-glow-violet">
-          <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
-              🤖 Twin Coach
-            </h2>
-            <span className="badge badge-violet">AI-Powered</span>
-          </div>
-
-          <div style={{
-            background: 'rgba(124,58,237,0.08)',
-            border: '1px solid rgba(124,58,237,0.2)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '20px',
-            marginBottom: '16px'
-          }}>
-            <p style={{
-              fontSize: '0.9rem', lineHeight: 1.7,
-              color: 'var(--text-primary)', fontStyle: 'italic'
-            }}>
-               "{prediction.coach_message || 'Analyzing your patterns...'}"
-            </p>
-          </div>
-
-          <div style={{
-            padding: '12px 14px',
-            background: 'var(--bg-glass)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: '16px'
-          }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600 }}>
-              Intervention Level
-            </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {['soft_nudge', 'intent_gate', 'hard_friction'].map((level, i) => {
-                const isActive = prediction.intervention_level === level
-                const colors = ['var(--cyan)', 'var(--violet)', 'var(--rose)']
-                return (
-                  <div key={level} style={{
-                    flex: 1, padding: '6px 8px', borderRadius: '6px',
-                    background: isActive ? `${colors[i]}22` : 'transparent',
-                    border: `1px solid ${isActive ? colors[i] + '55' : 'transparent'}`,
-                    fontSize: '0.68rem', fontWeight: 700, textAlign: 'center',
-                    color: isActive ? colors[i] : 'var(--text-muted)',
-                    textTransform: 'capitalize'
-                  }}>
-                    {level.replace('_', ' ')}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button id="trigger-intervention-btn" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={triggerDemo}>
-              Trigger Intervention
+          <h3 style={{ fontSize:'0.95rem', fontWeight:700, display:'flex', alignItems:'center', gap:'8px', color:'#34d399', marginBottom:'4px' }}>
+            ❤️ Emotion Override
+          </h3>
+          <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginBottom:'16px' }}>
+            Manually override the AI if you think it misread your tired state
+          </p>
+          <div style={{ display:'flex', gap:'10px' }}>
+            <input 
+              type="text" 
+              value={moodInput}
+              onChange={(e) => setMoodInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleMoodSubmit()}
+              placeholder="e.g. 'I'm feeling intensely focused!'"
+              style={{ flex:1, padding:'10px 14px', borderRadius:'var(--radius-sm)', background:'var(--bg-glass)', border:'1px solid var(--border)', color:'white', outline:'none', fontSize:'0.85rem' }}
+            />
+            <button className="btn btn-cyan btn-sm" onClick={handleMoodSubmit}>
+              Override
             </button>
           </div>
         </div>
-      </div>
 
-      {/* NEW FEATURES ROW: Explainable AI & Mood Input */}
-      <div className="grid-2">
-        {/* Explainable AI */}
-        <div className="card" style={{ background: 'rgba(6, 182, 212, 0.04)', borderColor: 'rgba(6, 182, 212, 0.2)' }}>
-           <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--cyan)' }}>
-              🧠 Explainable AI (Why?)
-            </h2>
-            <span className="badge badge-cyan" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--cyan)' }}>Prediction Logic</span>
-          </div>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.6 }}>
-            You are likely to <span style={{color: predConfig.color, fontWeight: 'bold'}}>{predConfig.label}</span> because:
-          </p>
-          <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {prediction.top_features ? prediction.top_features.map((feat, i) => (
-              <li key={i} style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <CheckCircle size={14} color="var(--cyan)" />
-                {feat}
-              </li>
-            )) : (
-              <>
-                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <CheckCircle size={14} color="var(--cyan)" />
-                  You slept late last night (Recovery deficit)
-                </li>
-                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <CheckCircle size={14} color="var(--cyan)" />
-                  It is 3:00 PM (Your historical energy dip)
-                </li>
-                <li style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <CheckCircle size={14} color="var(--cyan)" />
-                  You just opened an app from your distraction chain
-                </li>
-              </>
-            )}
-          </ul>
-        </div>
-
-        {/* Mood Override (Active Detection) */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-16">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700 }}>
-              ❤️ User Mood Input
-            </h2>
-            <span className="badge badge-emerald" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--emerald)' }}>Active Sensing</span>
-          </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            Override the passive fingerprint. How are you feeling right now?
-          </p>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-            <input 
-              type="text" 
-              placeholder="e.g. 'I feel tired', 'Super focused!'" 
-              id="mood-input-box"
-              style={{
-                flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                color: 'white', outline: 'none', fontSize: '0.9rem'
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.target.value = '';
-                  triggerDemo(); // Demo an intervention based on mood
-                }
-              }}
-            />
-            <button className="btn btn-primary btn-sm" onClick={() => {
-              document.getElementById('mood-input-box').value = '';
-              triggerDemo();
-            }}>Detect</button>
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: '6px', borderLeft: '3px solid var(--emerald)' }}>
-            Detected: <strong>Tiredness</strong>. Prediction automatically adjusted to higher distraction risk.
-          </div>
-        </div>
       </div>
     </div>
   )

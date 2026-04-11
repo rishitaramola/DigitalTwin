@@ -78,6 +78,18 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            horizon TEXT DEFAULT 'day', 
+            is_routine INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+
     try:
         cursor.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
     except sqlite3.OperationalError:

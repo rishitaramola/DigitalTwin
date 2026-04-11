@@ -9,6 +9,8 @@ import SuccessArchaeology from './pages/SuccessArchaeology'
 import Chat from './pages/Chat'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Planner from './pages/Planner'
+import PreEmptiveRadar from './pages/PreEmptiveRadar'
 
 // Wrapper: redirect to /login if not authenticated
 function ProtectedRoute({ children }) {
@@ -27,6 +29,8 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/planner" element={<Planner />} />
+          <Route path="/pre-emptive-radar" element={<PreEmptiveRadar />} />
           <Route path="/simulation" element={<Simulation />} />
           <Route path="/habit-dna" element={<HabitDNA />} />
           <Route path="/shadow-self" element={<ShadowSelf />} />

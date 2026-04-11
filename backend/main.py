@@ -83,6 +83,14 @@ class SimulateRequest(BaseModel):
     choice: str  # "focus" | "distraction" | "walk"
     current_focus: Optional[float] = 0.6
 
+class TaskCreate(BaseModel):
+    title: str
+    horizon: str = "day"  # day, week, month, year
+    is_routine: bool = False
+
+class TaskUpdate(BaseModel):
+    status: str
+
 # ─── Auth Models ──────────────────────────────────────────────────────────────
 class SendOTPRequest(BaseModel):
     email: str
@@ -483,6 +491,70 @@ def get_stats():
         "model_status": "trained" if os.path.exists(os.path.join("ml", "model.pkl")) else "untrained"
     }
 
+
+# ─── Planner / Tasks Routes ─────────────────────────────────────────────────────
+
+@app.get("/api/tasks")
+def get_tasks(current_user: dict = Depends(get_current_user)):
+    """Fetch user tasks and routines with Twin intelligence context."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT id, title, horizon, is_routine, status FROM user_tasks WHERE user_id = ? ORDER BY created_at DESC", 
+        (current_user["id"],)
+    ).fetchall()
+    conn.close()
+    
+    tasks = [dict(r) for r in rows]
+    
+    # Twin intelligence
+    pending_day = len([t for t in tasks if t["horizon"] == "day" and t["status"] == "pending" and not t["is_routine"]])
+    routine_pending = len([t for t in tasks if t["is_routine"] and t["status"] == "pending"])
+    
+    if pending_day > 3:
+        twin_insight = "Your Twin noticed you have quite a few tasks for today. Maybe focus on the top 2 and leave the rest for later to maintain your flow."
+    elif routine_pending > 0:
+        twin_insight = f"Don't forget your daily routine! You have {routine_pending} routine items pending."
+    else:
+        twin_insight = "Clear skies! Your Twin is aligned with your day."
+
+    return {
+        "tasks": tasks,
+        "twin_insight": twin_insight
+    }
+
+@app.post("/api/tasks")
+def create_task(req: TaskCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new task or routine."""
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO user_tasks (user_id, title, horizon, is_routine) VALUES (?, ?, ?, ?)",
+        (current_user["id"], req.title, req.horizon, 1 if req.is_routine else 0)
+    )
+    conn.commit()
+    task_id = cursor.lastrowid
+    conn.close()
+    return {"id": task_id, "title": req.title, "horizon": req.horizon, "is_routine": req.is_routine, "status": "pending"}
+
+@app.put("/api/tasks/{task_id}")
+def update_task_status(task_id: int, req: TaskUpdate, current_user: dict = Depends(get_current_user)):
+    """Update task status (e.g. pending / completed)."""
+    conn = get_connection()
+    conn.execute(
+        "UPDATE user_tasks SET status = ? WHERE id = ? AND user_id = ?",
+        (req.status, task_id, current_user["id"])
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.delete("/api/tasks/{task_id}")
+def delete_task(task_id: int, current_user: dict = Depends(get_current_user)):
+    """Delete a task."""
+    conn = get_connection()
+    conn.execute("DELETE FROM user_tasks WHERE id = ? AND user_id = ?", (task_id, current_user["id"]))
+    conn.commit()
+    conn.close()
+    return {"status": "deleted"}
 
 if __name__ == "__main__":
     import uvicorn

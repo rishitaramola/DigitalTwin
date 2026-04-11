@@ -117,13 +117,21 @@ export default function Simulation() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Run the Future</h1>
+        <h1 className="page-title">Run Simulation — What If?</h1>
         <p className="page-subtitle">
           Choose a path now and see the ripple effect over the next 2 hours — and into tomorrow.
         </p>
       </div>
 
+      {/* Page-level explanation */}
+      <div className="card" style={{ marginBottom:'24px', borderColor:'rgba(124,58,237,0.25)', background:'rgba(124,58,237,0.04)' }}>
+        <p style={{ fontSize:'0.9rem', color:'var(--text-secondary)', lineHeight:1.8, margin:0 }}>
+          <strong style={{ color:'var(--text-primary)' }}>🔮 What is this page?</strong> Imagine you're standing at a crossroads right now. You can keep working, take a break, or pick up your phone. This tool lets you <strong style={{ color:'var(--violet-light)' }}>test each choice BEFORE you make it</strong>. Your Digital Twin uses your past behaviour data to predict exactly what will happen in the next 2 hours — and how it affects tomorrow. Think of it like a time machine for your productivity.
+        </p>
+      </div>
+
       {/* Choice Cards */}
+      <div className="section-label" style={{ marginBottom:'8px' }}>👇 Pick a path below — click any card to simulate that future</div>
       <div className="grid-3" style={{ marginBottom: '28px' }}>
         {CHOICES.map((c) => (
           <button
@@ -172,8 +180,11 @@ export default function Simulation() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
               <span style={{ fontSize: '2rem', flexShrink: 0 }}>🔮</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', marginBottom: '8px' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', marginBottom: '4px' }}>
                   Twin Verdict
+                </div>
+                <div style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginBottom:'8px' }}>
+                  This is your Twin's final recommendation — based on running this exact scenario against your past data.
                 </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                   {result.verdict}
@@ -185,9 +196,12 @@ export default function Simulation() {
           <div className="grid-2" style={{ marginBottom: '20px' }}>
             {/* Timeline Chart */}
             <div className="card">
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: '20px', fontSize: '1rem' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: '6px', fontSize: '1rem' }}>
                 📈 Focus Timeline (Next 2 Hours)
               </h2>
+              <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:'16px', lineHeight:1.5 }}>
+                This graph shows how your focus will rise or fall minute-by-minute. The higher the line, the more productive you are.
+              </p>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={result.timeline}>
                   <defs>
@@ -224,9 +238,12 @@ export default function Simulation() {
 
             {/* End State Metrics */}
             <div className="card">
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: '20px', fontSize: '1rem' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: '6px', fontSize: '1rem' }}>
                 🌅 Ripple Effect (Tomorrow)
               </h2>
+              <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:'16px', lineHeight:1.5 }}>
+                Every choice has a ripple effect. This shows how today's decision changes tomorrow's focus, sleep, and guilt. Green means good, red means trouble.
+              </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
                 {END_METRICS.map(({ label, value, icon, good }) => (
                   <div key={label} style={{

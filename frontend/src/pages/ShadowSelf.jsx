@@ -65,15 +65,25 @@ export default function ShadowSelf() {
         </p>
       </div>
 
+      {/* Page explanation */}
+      <div className="card" style={{ marginBottom:'24px', borderColor:'rgba(124,58,237,0.25)', background:'rgba(124,58,237,0.04)' }}>
+        <p style={{ fontSize:'0.9rem', color:'var(--text-secondary)', lineHeight:1.8, margin:0 }}>
+          <strong style={{ color:'var(--text-primary)' }}>👤 What is this page?</strong> Right now, there are two versions of you. One stays focused and finishes work. The other picks up the phone and spirals. This page runs <strong style={{ color:'var(--violet-light)' }}>both futures side by side</strong> using your real behaviour data so you can see the actual cost of distraction — in numbers, not guesses.
+        </p>
+      </div>
+
       {loading ? (
         <div className="card skeleton" style={{ height: '400px' }} />
       ) : (
         <>
-          {/* Divernet score banner */}
+          {/* Divergence score banner */}
           <div className="card card-glow-violet" style={{ marginBottom: '24px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
               The Cost of This Moment
             </div>
+            <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:'16px' }}>
+              These numbers show the exact gap between your best self and worst self — based on your own past data.
+            </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
               {[
                 { label: 'Focus Gap (Tomorrow)', value: `+${data.divergence_in_2_hours.focus_gap}%`, color: 'var(--emerald)' },
@@ -93,9 +103,12 @@ export default function ShadowSelf() {
 
           {/* Dual timeline chart */}
           <div className="card" style={{ marginBottom: '24px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '20px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
               ⚔️ Two Timelines — One Choice
             </h2>
+            <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:'16px' }}>
+              The green line shows your focus level if you stay productive. The red dashed line shows what happens if you get distracted. Watch how they diverge over 2 hours.
+            </p>
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={mergedTimeline}>
                 <defs>
