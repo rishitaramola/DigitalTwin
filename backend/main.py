@@ -5,18 +5,34 @@ Team: Bit Rebels | Hack-o-Holic 4.0
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
+import bcrypt
+from jose import JWTError, jwt
+from dotenv import load_dotenv
+load_dotenv()
+from email_service import send_otp_email
+
+# In-memory OTP storage (email -> otp_string)
+otp_store = {}
 
 from database import init_db, get_connection
 from ml.predictor import predict_from_context
 from engines.observation_engine import get_observation_engine
 from engines.intervention_engine import get_intervention_engine
 from engines.simulation_engine import get_simulation_engine
+
+# ─── Auth Config ──────────────────────────────────────────────────────────────
+SECRET_KEY = "bit-rebels-digital-twin-secret-2024"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 30
+
+security = HTTPBearer(auto_error=False)
 
 # ─── App Setup ────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -67,6 +83,57 @@ class SimulateRequest(BaseModel):
     choice: str  # "focus" | "distraction" | "walk"
     current_focus: Optional[float] = 0.6
 
+# ─── Auth Models ──────────────────────────────────────────────────────────────
+class SendOTPRequest(BaseModel):
+    email: str
+
+class VerifyOTPRequest(BaseModel):
+    email: str
+    otp: str
+
+class SignupRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    identifier: str
+    password: str
+
+class PasswordVerifyRequest(BaseModel):
+    password: str
+
+# ─── Auth Helpers ─────────────────────────────────────────────────────────────
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+def create_token(data: dict) -> str:
+    payload = data.copy()
+    payload["exp"] = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = decode_token(credentials.credentials)
+    conn = get_connection()
+    user = conn.execute(
+        "SELECT id, username, email FROM users WHERE id = ?", (payload.get("sub"),)
+    ).fetchone()
+    conn.close()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return dict(user)
+
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +146,120 @@ def root():
         "status": "online",
         "version": "1.0.0"
     }
+
+
+# ─── Auth Routes ──────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/send-otp")
+def send_otp(req: SendOTPRequest):
+    email = req.email.lower().strip()
+    if not email:
+        raise HTTPException(400, "Email is required")
+        
+    # Hackathon Demo Mode: Allow multiple OTP sends even if registered
+
+    otp_code = str(random.randint(100000, 999999))
+    otp_store[email] = otp_code
+    
+    success = send_otp_email(email, otp_code)
+    if not success:
+        raise HTTPException(500, "Failed to send Verification Email")
+    return {"status": "sent", "message": "OTP sent successfully"}
+
+@app.post("/api/auth/verify-otp")
+def verify_otp(req: VerifyOTPRequest):
+    email = req.email.lower().strip()
+    if otp_store.get(email) == req.otp:
+        otp_store[email] = "VERIFIED"
+        return {"status": "verified"}
+    raise HTTPException(400, "Invalid or expired OTP")
+
+@app.post("/api/auth/signup")
+def signup(req: SignupRequest):
+    """Create a new user account."""
+    email = req.email.lower().strip()
+    if otp_store.get(email) != "VERIFIED":
+        raise HTTPException(400, "Email must be verified first")
+
+    if len(req.username.strip()) < 2:
+        raise HTTPException(400, "Username must be at least 2 characters")
+    if len(req.password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+    conn = get_connection()
+    # Hackathon Demo Mode: Overwrite if exists
+    conn.execute(
+        "DELETE FROM users WHERE email = ? OR username = ?",
+        (req.email.lower().strip(), req.username.strip())
+    )
+    conn.commit()
+    hashed = hash_password(req.password)
+    cursor = conn.execute(
+        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+        (req.username.strip(), req.email.lower().strip(), hashed)
+    )
+    conn.commit()
+    user_id = cursor.lastrowid
+    conn.close()
+    token = create_token({"sub": user_id, "username": req.username.strip()})
+    return {"token": token, "user": {"id": user_id, "username": req.username.strip(), "email": req.email.lower().strip()}}
+
+
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    """Log in with email or username and password."""
+    conn = get_connection()
+    identifier = req.identifier.lower().strip()
+    user = conn.execute(
+        "SELECT id, username, email, password_hash, is_active FROM users WHERE email = ? OR username = ?",
+        (identifier, identifier)
+    ).fetchone()
+    
+    if not user or not verify_password(req.password, user["password_hash"]):
+        conn.close()
+        raise HTTPException(401, "Invalid username/email or password")
+    
+    # Auto-reactivate if deactivated
+    if user["is_active"] == 0:
+        conn.execute("UPDATE users SET is_active = 1 WHERE id = ?", (user["id"],))
+        conn.commit()
+
+    conn.close()
+    token = create_token({"sub": user["id"], "username": user["username"]})
+    return {"token": token, "user": {"id": user["id"], "username": user["username"], "email": user["email"]}}
+
+@app.post("/api/auth/deactivate")
+def deactivate_account(req: PasswordVerifyRequest, current_user: dict = Depends(get_current_user)):
+    """Deactivate user account requiring password verification."""
+    conn = get_connection()
+    user = conn.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],)).fetchone()
+    if not user or not verify_password(req.password, user["password_hash"]):
+        conn.close()
+        raise HTTPException(status_code=401, detail="Incorrect password")
+    
+    conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (current_user["id"],))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Account deactivated"}
+
+@app.post("/api/auth/delete")
+def delete_account(req: PasswordVerifyRequest, current_user: dict = Depends(get_current_user)):
+    """Permanently delete user account requiring password verification."""
+    conn = get_connection()
+    user = conn.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],)).fetchone()
+    if not user or not verify_password(req.password, user["password_hash"]):
+        conn.close()
+        raise HTTPException(status_code=401, detail="Incorrect password")
+    
+    conn.execute("DELETE FROM users WHERE id = ?", (current_user["id"],))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Account permanently deleted"}
+
+
+@app.get("/api/auth/me")
+def me(current_user: dict = Depends(get_current_user)):
+    """Get the currently logged-in user."""
+    return current_user
 
 
 @app.get("/api/current-state")

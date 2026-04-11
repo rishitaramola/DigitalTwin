@@ -6,7 +6,7 @@ echo   Team: Bit Rebels ^| Hack-o-Holic 4.0
 echo ============================================================
 echo.
 echo [1/2] Starting FastAPI backend (http://localhost:8000)...
-start "Digital Twin Backend" /D "%~dp0backend" cmd /k "python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+start "Digital Twin Backend" /D "%~dp0backend" cmd /k "py -3.13 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"
 
 echo Waiting for backend to initialize...
 timeout /t 4 /nobreak >nul

@@ -14,6 +14,18 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # ── Users (auth) ──────────────────────────────────────────────────────────
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS behavioral_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,6 +77,11 @@ def init_db():
             trigger_context TEXT
         )
     """)
+
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+    except sqlite3.OperationalError:
+        pass  # Column likely already exists
 
     conn.commit()
     conn.close()
