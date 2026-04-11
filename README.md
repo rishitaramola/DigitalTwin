@@ -72,73 +72,46 @@ Bit Rebels/
 
 ---
 
-## Quick Start (Mac/Linux)
+## ⚡ Quick Start: Terminal Commands
 
-### Step 1 — Prerequisites
-- [Python 3.9+](https://python.org/downloads)
-- [Node.js 18+](https://nodejs.org)
+To run the project, open your Command Prompt or Terminal and run the following commands.
 
-### Step 2 — First Time Setup (Terminal)
-Run these commands in your terminal from the project root:
+### Step 1: Install Dependencies (Run Once)
 ```bash
-# 1. Install backend dependencies
+# Install Python backend requirements
 cd backend
 pip install -r requirements.txt
-
-# 2. Train the ML model
 python ml/train.py
 cd ..
 
-# 3. Install frontend dependencies
+# Install Node frontend requirements
 cd frontend
 npm install
 cd ..
 ```
 
-### Step 3 — Run the App
-You will need two terminal windows.
+### Step 2: Start the Servers (You need TWO terminal windows)
 
-**Terminal 1 (Backend):**
+**Terminal 1 (Run the Backend AI Engine):**
 ```bash
 cd backend
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Terminal 2 (Frontend):**
+**Terminal 2 (Run the React UI):**
 ```bash
 cd frontend
 npm run dev
 ```
 
+### 💫 Windows Shortcut
+If you are on Windows, you can simply double-click or run the included batch files from the root directory instead of typing the commands above:
+1. Run `setup.bat` (first time only)
+2. Run `start.bat` (every time you want to start the app)
+
 Opens the frontend at **http://localhost:3000** and the API at **http://localhost:8000**
 
-> **Note:** The app works in **Demo Mode** even without the backend running — all pages show realistic mock data.
-
----
-
-## Quick Start (Windows)
-
-### Step 1 — Prerequisites
-- [Python 3.9+](https://python.org/downloads)
-- [Node.js 18+](https://nodejs.org)
-
-### Step 2 — First Time Setup
-```batch
-setup.bat
-```
-This will:
-1. Install all Python packages
-2. Generate synthetic training data (14 days × 80 events/day)
-3. Train the Decision Tree model
-4. Install frontend Node packages
-
-### Step 3 — Run the App
-```batch
-start.bat
-```
-Opens the frontend at **http://localhost:3000** and the API at **http://localhost:8000**
-
-> **Note:** The app works in **Demo Mode** even without the backend running — all pages show realistic mock data.
+> **Note:** The app works elegantly in **Demo Mode** even without the backend running — all pages show realistic mock data for easy pitching!
 
 ---
 
